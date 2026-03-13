@@ -1,0 +1,758 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="INTEL">
+<meta name="theme-color" content="#060a0d">
+<link rel="manifest" href="manifest.json">
+<title>MidEast Intel Live</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Bebas+Neue&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+
+<style>
+:root {
+  --bg:      #060a0d;
+  --panel:   #0c1318;
+  --panel2:  #111c24;
+  --border:  #1a2a35;
+  --green:   #00ff88;
+  --red:     #ff3344;
+  --orange:  #ff8800;
+  --yellow:  #ffd600;
+  --blue:    #00b4ff;
+  --purple:  #b366ff;
+  --dim:     #384e5e;
+  --text:    #b0c8d8;
+  --white:   #e4f0f8;
+}
+
+* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+
+html, body {
+  height: 100%;
+  overflow: hidden;
+}
+
+body {
+  background: var(--bg);
+  font-family: 'DM Sans', sans-serif;
+  color: var(--text);
+  display: flex;
+  flex-direction: column;
+  max-width: 480px;
+  margin: 0 auto;
+}
+
+/* ── HEADER ── */
+.app-header {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px 10px;
+  background: linear-gradient(180deg, #0a1520 0%, transparent 100%);
+  border-bottom: 1px solid var(--border);
+}
+
+.app-logo {
+  font-family: 'Bebas Neue';
+  font-size: 22px;
+  letter-spacing: 4px;
+  color: var(--green);
+  line-height: 1;
+}
+.app-logo small {
+  display: block;
+  font-family: 'Share Tech Mono';
+  font-size: 9px;
+  letter-spacing: 2px;
+  color: var(--dim);
+  margin-top: 1px;
+}
+
+.header-right { display: flex; align-items: center; gap: 10px; }
+
+.live-pill {
+  display: flex; align-items: center; gap: 5px;
+  background: rgba(0,255,136,0.08);
+  border: 1px solid rgba(0,255,136,0.25);
+  border-radius: 20px;
+  padding: 4px 10px;
+  font-family: 'Share Tech Mono';
+  font-size: 9px;
+  color: var(--green);
+  letter-spacing: 1px;
+}
+.live-dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--green);
+  box-shadow: 0 0 6px var(--green);
+  animation: pulse 1.8s ease-in-out infinite;
+}
+@keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.3;transform:scale(.7)} }
+
+.refresh-btn {
+  background: none; border: none; cursor: pointer;
+  color: var(--dim); font-size: 16px;
+  padding: 4px; border-radius: 50%;
+  transition: all .2s;
+  line-height: 1;
+}
+.refresh-btn:active { color: var(--green); transform: rotate(180deg); }
+.refresh-btn.spinning { animation: spin .7s linear infinite; color: var(--green); }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── THREAT BAR ── */
+.threat-bar {
+  flex-shrink: 0;
+  display: flex;
+  gap: 6px;
+  padding: 10px 14px;
+  background: var(--panel);
+  border-bottom: 1px solid var(--border);
+  overflow-x: auto;
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.threat-bar::-webkit-scrollbar { display: none; }
+
+.t-chip {
+  flex: 1;
+  min-width: 60px;
+  border-radius: 6px;
+  padding: 6px 4px;
+  text-align: center;
+  border: 1px solid;
+  cursor: pointer;
+  transition: all .15s;
+}
+.t-chip:active { transform: scale(.95); }
+.t-chip .t-flag { font-size: 14px; display: block; line-height: 1; margin-bottom: 2px; }
+.t-chip .t-name { font-family: 'Share Tech Mono'; font-size: 8px; letter-spacing: 1px; display: block; opacity: .7; }
+.t-chip .t-level { font-family: 'Bebas Neue'; font-size: 11px; letter-spacing: 1px; display: block; margin-top: 1px; }
+
+.chip-CRITICAL, .chip-HIGH { border-color: var(--red); color: var(--red); background: rgba(255,51,68,.06); }
+.chip-ELEVATED { border-color: var(--orange); color: var(--orange); background: rgba(255,136,0,.06); }
+.chip-MODERATE { border-color: var(--yellow); color: var(--yellow); background: rgba(255,214,0,.06); }
+.chip-LOW { border-color: var(--green); color: var(--green); background: rgba(0,255,136,.06); }
+.chip-unknown { border-color: var(--dim); color: var(--dim); background: transparent; }
+
+/* ── SCROLL CONTENT ── */
+.scroll-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px 14px;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* ── PLACEHOLDER ── */
+.placeholder-screen {
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  height: 100%; gap: 14px; text-align: center;
+}
+.placeholder-radar {
+  width: 80px; height: 80px;
+  border: 2px solid var(--border);
+  border-radius: 50%;
+  position: relative;
+  margin-bottom: 4px;
+}
+.placeholder-radar::before {
+  content: '';
+  position: absolute;
+  top: 50%; left: 50%;
+  width: 50%; height: 50%;
+  border-top: 2px solid var(--green);
+  border-right: 2px solid transparent;
+  border-radius: 50% 50% 0 0;
+  transform-origin: bottom left;
+  animation: radar 2s linear infinite;
+  opacity: .5;
+}
+@keyframes radar { to { transform: rotate(360deg); } }
+.placeholder-radar .center-dot {
+  position: absolute; top:50%; left:50%;
+  width:6px; height:6px; border-radius:50%;
+  background: var(--green); margin: -3px 0 0 -3px;
+  box-shadow: 0 0 10px var(--green);
+}
+.placeholder-title {
+  font-family: 'Bebas Neue'; font-size: 20px;
+  letter-spacing: 3px; color: var(--white);
+}
+.placeholder-sub {
+  font-family: 'Share Tech Mono'; font-size: 10px;
+  color: var(--dim); letter-spacing: 1px; line-height: 1.8;
+}
+.scan-now-btn {
+  margin-top: 6px;
+  background: transparent;
+  border: 1px solid var(--green);
+  color: var(--green);
+  font-family: 'Bebas Neue';
+  font-size: 18px;
+  letter-spacing: 3px;
+  padding: 12px 32px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all .2s;
+}
+.scan-now-btn:active { background: rgba(0,255,136,.1); transform: scale(.97); }
+
+/* ── LOADING ── */
+.loading-screen {
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  height: 100%; gap: 20px;
+}
+.loader-ring {
+  width: 52px; height: 52px;
+  border: 2px solid var(--border);
+  border-top-color: var(--green);
+  border-radius: 50%;
+  animation: spin .7s linear infinite;
+}
+.loader-steps { font-family: 'Share Tech Mono'; font-size: 10px; line-height: 2.2; text-align: center; }
+.step { color: var(--dim); transition: color .3s; }
+.step.done { color: var(--green); }
+.step.active { color: var(--green); animation: blink 1s infinite; }
+@keyframes blink { 50%{opacity:.3} }
+
+/* ── SECTION HEADER ── */
+.section-head {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 8px 0 4px;
+  margin-bottom: 6px;
+  border-bottom: 1px solid var(--border);
+}
+.section-title {
+  font-family: 'Bebas Neue'; font-size: 14px;
+  letter-spacing: 2px; display: flex; align-items: center; gap: 6px;
+}
+.section-badge {
+  font-family: 'Share Tech Mono'; font-size: 8px;
+  padding: 2px 6px; border-radius: 2px; border: 1px solid;
+}
+
+/* ── THEATER BLOCK ── */
+.theater-block {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  margin-bottom: 10px;
+  overflow: hidden;
+  animation: fadeUp .4s ease both;
+}
+@keyframes fadeUp { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
+
+.theater-block:nth-child(2) { animation-delay: .05s; }
+.theater-block:nth-child(3) { animation-delay: .10s; }
+.theater-block:nth-child(4) { animation-delay: .15s; }
+
+.th-header {
+  padding: 10px 12px;
+  display: flex; align-items: center; justify-content: space-between;
+  border-bottom: 1px solid var(--border);
+  border-left: 3px solid;
+}
+.th-left { display: flex; align-items: center; gap: 8px; }
+.th-icon { font-size: 18px; line-height: 1; }
+.th-name { font-family: 'Bebas Neue'; font-size: 15px; letter-spacing: 2px; }
+.th-badge {
+  font-family: 'Share Tech Mono'; font-size: 9px;
+  padding: 3px 7px; border-radius: 3px; border: 1px solid;
+}
+.th-headline {
+  padding: 8px 12px;
+  font-size: 11px; color: var(--text);
+  font-style: italic;
+  border-bottom: 1px solid var(--border);
+  line-height: 1.5;
+}
+
+/* ── ALERT ITEMS ── */
+.alert-list { padding: 4px 0; }
+.alert-item {
+  display: flex; gap: 8px;
+  padding: 7px 12px;
+  border-bottom: 1px solid rgba(26,42,53,.6);
+  align-items: flex-start;
+}
+.alert-item:last-child { border-bottom: none; }
+.a-sev {
+  font-family: 'Share Tech Mono'; font-size: 8px;
+  padding: 2px 5px; border-radius: 2px; border: 1px solid;
+  white-space: nowrap; margin-top: 2px; flex-shrink: 0;
+}
+.sH { color:var(--red);   border-color:var(--red);    background:rgba(255,51,68,.1); }
+.sM { color:var(--orange); border-color:var(--orange); background:rgba(255,136,0,.1); }
+.sL { color:var(--yellow); border-color:var(--yellow); background:rgba(255,214,0,.08); }
+.sI { color:var(--blue);   border-color:var(--blue);   background:rgba(0,180,255,.08); }
+
+.a-body { flex: 1; }
+.a-title { font-size: 11px; color: var(--white); font-weight: 500; line-height: 1.4; }
+.a-explain { font-size: 10px; color: var(--dim); margin-top: 2px; font-style: italic; line-height: 1.4; }
+
+/* ── BOTTOM CARDS ── */
+.bottom-cards {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 8px;
+  margin-bottom: 10px;
+}
+.b-card {
+  background: var(--panel); border: 1px solid var(--border);
+  border-radius: 8px; padding: 10px;
+  animation: fadeUp .4s .2s ease both;
+}
+.b-card-title {
+  font-family: 'Bebas Neue'; font-size: 11px;
+  letter-spacing: 2px; margin-bottom: 6px;
+  padding-bottom: 5px; border-bottom: 1px solid var(--border);
+}
+.b-card-text { font-size: 10px; line-height: 1.7; color: var(--text); }
+
+/* ── INDIA CARD ── */
+.india-card {
+  background: linear-gradient(135deg, rgba(255,153,0,.04) 0%, rgba(19,136,8,.04) 100%);
+  border: 1px solid rgba(255,153,0,.2);
+  border-radius: 8px; padding: 12px;
+  margin-bottom: 10px;
+  animation: fadeUp .4s .25s ease both;
+}
+.india-card-title {
+  font-family: 'Bebas Neue'; font-size: 14px;
+  letter-spacing: 2px; color: var(--orange);
+  margin-bottom: 7px; display: flex; align-items: center; gap: 6px;
+}
+.india-card-text { font-size: 11px; line-height: 1.8; color: var(--text); }
+
+/* ── TIMESTAMP ── */
+.ts-line {
+  font-family: 'Share Tech Mono'; font-size: 9px;
+  color: var(--dim); text-align: center;
+  padding: 6px 0 20px;
+  letter-spacing: 1px;
+}
+
+/* ── AUTO REFRESH FOOTER ── */
+.app-footer {
+  flex-shrink: 0;
+  display: flex;
+  gap: 8px;
+  padding: 8px 14px 14px;
+  background: linear-gradient(0deg, #060a0d 60%, transparent 100%);
+  border-top: 1px solid var(--border);
+}
+.footer-scan-btn {
+  flex: 1;
+  background: transparent;
+  border: 1px solid var(--green);
+  color: var(--green);
+  font-family: 'Bebas Neue';
+  font-size: 16px;
+  letter-spacing: 3px;
+  padding: 11px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all .2s;
+}
+.footer-scan-btn:active { background: rgba(0,255,136,.1); transform: scale(.98); }
+.footer-scan-btn:disabled { opacity: .35; cursor: not-allowed; }
+
+.auto-toggle-btn {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  color: var(--dim);
+  font-family: 'Share Tech Mono';
+  font-size: 9px; letter-spacing: 1px;
+  padding: 11px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all .2s;
+  white-space: nowrap;
+}
+.auto-toggle-btn.on {
+  border-color: var(--orange);
+  color: var(--orange);
+  background: rgba(255,136,0,.05);
+}
+.auto-toggle-btn:active { transform: scale(.97); }
+
+.interval-sel {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-family: 'Share Tech Mono';
+  font-size: 9px;
+  padding: 6px 4px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+/* ── INSTALL BANNER ── */
+.install-banner {
+  margin: 0 0 10px;
+  background: rgba(0,180,255,.06);
+  border: 1px solid rgba(0,180,255,.2);
+  border-radius: 8px;
+  padding: 10px 12px;
+  display: flex; align-items: center; justify-content: space-between; gap: 8px;
+}
+.install-text { font-size: 10px; color: var(--blue); line-height: 1.5; flex: 1; }
+.install-btn {
+  background: rgba(0,180,255,.1); border: 1px solid var(--blue);
+  color: var(--blue); font-family: 'Share Tech Mono'; font-size: 9px;
+  letter-spacing: 1px; padding: 6px 10px; border-radius: 4px;
+  cursor: pointer; white-space: nowrap;
+}
+.install-close {
+  background: none; border: none; color: var(--dim);
+  font-size: 14px; cursor: pointer; padding: 2px;
+}
+
+/* ── ERROR ── */
+.err-box {
+  background: rgba(255,51,68,.05); border: 1px solid rgba(255,51,68,.3);
+  border-radius: 8px; padding: 14px;
+  font-family: 'Share Tech Mono'; font-size: 10px;
+  color: var(--red); line-height: 1.8;
+  margin-bottom: 10px;
+}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="app-header">
+  <div class="app-logo">
+    INTEL
+    <small>MIDEAST LIVE · 4 THEATERS</small>
+  </div>
+  <div class="header-right">
+    <div class="live-pill">
+      <div class="live-dot"></div>
+      LIVE
+    </div>
+    <button class="refresh-btn" id="refreshIcon" onclick="fetchAll()" title="Refresh">↻</button>
+  </div>
+</div>
+
+<!-- THREAT CHIPS -->
+<div class="threat-bar" id="threatBar">
+  <div class="t-chip chip-unknown" onclick="scrollToTheater('iran')">
+    <span class="t-flag">🇮🇷</span>
+    <span class="t-name">IRAN</span>
+    <span class="t-level" id="chip-iran">—</span>
+  </div>
+  <div class="t-chip chip-unknown" onclick="scrollToTheater('isl')">
+    <span class="t-flag">🇮🇱🇱🇧</span>
+    <span class="t-name">ISR/LB</span>
+    <span class="t-level" id="chip-isl">—</span>
+  </div>
+  <div class="t-chip chip-unknown" onclick="scrollToTheater('hormuz')">
+    <span class="t-flag">🚢</span>
+    <span class="t-name">HORMUZ</span>
+    <span class="t-level" id="chip-hormuz">—</span>
+  </div>
+  <div class="t-chip chip-unknown" onclick="scrollToTheater('oil')">
+    <span class="t-flag">🛢️</span>
+    <span class="t-name">OIL</span>
+    <span class="t-level" id="chip-oil">—</span>
+  </div>
+</div>
+
+<!-- MAIN SCROLL AREA -->
+<div class="scroll-content" id="mainContent">
+  <div class="placeholder-screen" id="placeholder">
+    <div class="placeholder-radar"><div class="center-dot"></div></div>
+    <div class="placeholder-title">MIDEAST INTEL LIVE</div>
+    <div class="placeholder-sub">
+      IRAN WAR · ISRAEL/LEBANON<br>
+      STRAIT OF HORMUZ · OIL MARKETS<br>
+      INDIA IMPACT ANALYSIS
+    </div>
+    <button class="scan-now-btn" onclick="fetchAll()">⚡ ACTIVATE SCAN</button>
+  </div>
+</div>
+
+<!-- FOOTER -->
+<div class="app-footer">
+  <button class="footer-scan-btn" id="scanBtn" onclick="fetchAll()">⚡ SCAN NOW</button>
+  <button class="auto-toggle-btn" id="autoBtn" onclick="toggleAuto()">AUTO<br>OFF</button>
+  <select class="interval-sel" id="intervalSel">
+    <option value="300000">5m</option>
+    <option value="600000">10m</option>
+    <option value="1800000">30m</option>
+  </select>
+</div>
+
+<script>
+// ── STATE ──
+let autoInterval = null;
+let deferredInstall = null;
+let stepTimer = null;
+
+// ── PWA INSTALL ──
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault();
+  deferredInstall = e;
+  showInstallBanner();
+});
+
+function showInstallBanner() {
+  const banner = document.createElement('div');
+  banner.className = 'install-banner';
+  banner.id = 'installBanner';
+  banner.innerHTML = `
+    <div class="install-text">📲 Add to Home Screen for instant live intel updates</div>
+    <button class="install-btn" onclick="doInstall()">INSTALL</button>
+    <button class="install-close" onclick="document.getElementById('installBanner').remove()">✕</button>
+  `;
+  const content = document.getElementById('mainContent');
+  content.insertBefore(banner, content.firstChild);
+}
+
+async function doInstall() {
+  if (!deferredInstall) return;
+  deferredInstall.prompt();
+  const { outcome } = await deferredInstall.userChoice;
+  if (outcome === 'accepted') document.getElementById('installBanner')?.remove();
+  deferredInstall = null;
+}
+
+// ── SERVICE WORKER ──
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('./sw.js').catch(() => {});
+}
+
+// ── AUTO REFRESH ──
+function toggleAuto() {
+  const btn = document.getElementById('autoBtn');
+  if (autoInterval) {
+    clearInterval(autoInterval);
+    autoInterval = null;
+    btn.classList.remove('on');
+    btn.textContent = 'AUTO\nOFF';
+  } else {
+    const ms = parseInt(document.getElementById('intervalSel').value);
+    btn.classList.add('on');
+    btn.textContent = 'AUTO\nON';
+    autoInterval = setInterval(fetchAll, ms);
+    fetchAll();
+  }
+}
+
+// ── SCROLL TO THEATER ──
+function scrollToTheater(id) {
+  const el = document.getElementById('theater-' + id);
+  if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+// ── CHIP UPDATE ──
+function updateChip(id, threat) {
+  const el = document.getElementById('chip-' + id);
+  const chip = el?.closest('.t-chip');
+  if (!el || !chip) return;
+  el.textContent = threat || '?';
+  chip.className = 't-chip chip-' + (threat || 'unknown');
+}
+
+// ── LOADING ──
+const STEPS = [
+  'SEARCHING LIVE SOURCES',
+  'ANALYZING IRAN THEATER',
+  'ANALYZING ISR/LEBANON',
+  'SCANNING HORMUZ/SHIPPING',
+  'COMPUTING OIL IMPACT',
+  'BUILDING INDIA BRIEF'
+];
+
+function showLoading() {
+  let idx = 0;
+  const stepsHtml = STEPS.map((s,i) => `<div class="step" id="step${i}">▸ ${s}</div>`).join('');
+  document.getElementById('mainContent').innerHTML = `
+    <div class="loading-screen">
+      <div class="loader-ring"></div>
+      <div class="loader-steps">${stepsHtml}</div>
+    </div>`;
+
+  document.getElementById('step0').className = 'step active';
+  stepTimer = setInterval(() => {
+    const prev = document.getElementById('step' + idx);
+    if (prev) { prev.className = 'step done'; prev.textContent = '✓ ' + STEPS[idx]; }
+    idx++;
+    const next = document.getElementById('step' + idx);
+    if (next) next.className = 'step active';
+    if (idx >= STEPS.length) clearInterval(stepTimer);
+  }, 900);
+}
+
+// ── MAIN FETCH ──
+async function fetchAll() {
+  const scanBtn = document.getElementById('scanBtn');
+  const refreshIcon = document.getElementById('refreshIcon');
+  scanBtn.disabled = true;
+  refreshIcon.classList.add('spinning');
+  if (stepTimer) clearInterval(stepTimer);
+  showLoading();
+
+  const prompt = `You are a real-time geopolitical intelligence analyst. Today is ${new Date().toDateString()}. Search for the very latest news on all 4 theaters simultaneously:
+1. Iran war — US/Israel strikes on Iran, Iranian missile retaliation, new Supreme Leader, casualties
+2. Israel & Lebanon — IDF operations, Hezbollah attacks, Israeli ground presence in Lebanon, Greater Israel
+3. Strait of Hormuz — shipping attacks, tanker seizures, blockade, oil flow disruption
+4. Oil & energy markets — crude price, supply shock, OPEC response
+
+Return ONLY valid JSON, no markdown, no extra text:
+{
+  "generated": "UTC timestamp string",
+  "theaters": {
+    "iran": {
+      "threat": "CRITICAL|HIGH|ELEVATED|MODERATE|LOW",
+      "headline": "one sentence current status",
+      "alerts": [{"sev":"H|M|L|I","title":"short title max 8 words","explain":"plain english 1 sentence"}]
+    },
+    "israel_lebanon": {
+      "threat": "CRITICAL|HIGH|ELEVATED|MODERATE|LOW",
+      "headline": "one sentence current status",
+      "alerts": [{"sev":"H|M|L|I","title":"short title max 8 words","explain":"plain english 1 sentence"}]
+    },
+    "hormuz": {
+      "threat": "CRITICAL|HIGH|ELEVATED|MODERATE|LOW",
+      "headline": "one sentence current status",
+      "alerts": [{"sev":"H|M|L|I","title":"short title max 8 words","explain":"plain english 1 sentence"}]
+    },
+    "oil_markets": {
+      "threat": "CRITICAL|HIGH|ELEVATED|MODERATE|LOW",
+      "headline": "one sentence current status",
+      "alerts": [{"sev":"H|M|L|I","title":"short title max 8 words","explain":"plain english 1 sentence"}]
+    }
+  },
+  "key_question": "single most critical open question right now",
+  "ceasefire_chance": "brief 1-2 sentence ceasefire probability assessment",
+  "india_impact": "3 sentences on India: oil import cost, INR pressure, diaspora/trade impact"
+}
+Each theater needs exactly 3-4 alerts. Use real facts from search.`;
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 1000,
+        tools: [{ type: 'web_search_20250305', name: 'web_search' }],
+        messages: [{ role: 'user', content: prompt }]
+      })
+    });
+
+    const data = await res.json();
+    let raw = data.content.filter(b => b.type === 'text').map(b => b.text).join('');
+    const clean = raw.replace(/```json|```/g, '').trim();
+
+    let d;
+    try { d = JSON.parse(clean); }
+    catch(e) {
+      showError('Could not parse AI response. Please tap Scan Now to retry.');
+      scanBtn.disabled = false;
+      refreshIcon.classList.remove('spinning');
+      return;
+    }
+
+    renderDashboard(d);
+  } catch(err) {
+    showError(`Network error: ${err.message}\n\nMake sure you're connected to the internet.`);
+  }
+
+  scanBtn.disabled = false;
+  refreshIcon.classList.remove('spinning');
+}
+
+function showError(msg) {
+  document.getElementById('mainContent').innerHTML =
+    `<div class="err-box">⚠ ${msg}</div>
+     <div style="text-align:center;margin-top:20px">
+       <button class="scan-now-btn" onclick="fetchAll()">⚡ RETRY</button>
+     </div>`;
+}
+
+// ── COLOR HELPERS ──
+const threatColor = t => ({
+  CRITICAL: 'var(--red)', HIGH: 'var(--red)',
+  ELEVATED: 'var(--orange)', MODERATE: 'var(--yellow)', LOW: 'var(--green)'
+}[t] || 'var(--blue)');
+
+const sevClass = s => ({ H:'sH', M:'sM', L:'sL', I:'sI' }[s] || 'sI');
+
+// ── RENDER THEATER ──
+function renderTheater(id, icon, name, data) {
+  if (!data) return '';
+  const c = threatColor(data.threat);
+  const alerts = (data.alerts || []).map(a => `
+    <div class="alert-item">
+      <span class="a-sev ${sevClass(a.sev)}">${a.sev}</span>
+      <div class="a-body">
+        <div class="a-title">${a.title}</div>
+        <div class="a-explain">${a.explain}</div>
+      </div>
+    </div>`).join('');
+
+  return `
+    <div class="theater-block" id="theater-${id}">
+      <div class="th-header" style="border-left-color:${c}">
+        <div class="th-left">
+          <span class="th-icon">${icon}</span>
+          <span class="th-name" style="color:${c}">${name}</span>
+        </div>
+        <span class="th-badge" style="color:${c};border-color:${c}">${data.threat}</span>
+      </div>
+      <div class="th-headline">${data.headline}</div>
+      <div class="alert-list">${alerts}</div>
+    </div>`;
+}
+
+// ── RENDER DASHBOARD ──
+function renderDashboard(d) {
+  const t = d.theaters || {};
+
+  // Update threat chips
+  updateChip('iran',   t.iran?.threat);
+  updateChip('isl',    t.israel_lebanon?.threat);
+  updateChip('hormuz', t.hormuz?.threat);
+  updateChip('oil',    t.oil_markets?.threat);
+
+  const html = `
+    ${renderTheater('iran',   '🇮🇷', 'IRAN WAR',         t.iran)}
+    ${renderTheater('isl',    '🇮🇱🇱🇧','ISRAEL / LEBANON', t.israel_lebanon)}
+    ${renderTheater('hormuz', '🚢',   'STRAIT OF HORMUZ', t.hormuz)}
+    ${renderTheater('oil',    '🛢️',  'OIL & ENERGY',     t.oil_markets)}
+
+    <div class="bottom-cards">
+      <div class="b-card">
+        <div class="b-card-title" style="color:var(--purple)">❓ KEY QUESTION</div>
+        <div class="b-card-text">${d.key_question || '—'}</div>
+      </div>
+      <div class="b-card">
+        <div class="b-card-title" style="color:var(--blue)">🕊️ CEASEFIRE</div>
+        <div class="b-card-text">${d.ceasefire_chance || '—'}</div>
+      </div>
+    </div>
+
+    ${d.india_impact ? `
+    <div class="india-card">
+      <div class="india-card-title">🇮🇳 INDIA IMPACT</div>
+      <div class="india-card-text">${d.india_impact}</div>
+    </div>` : ''}
+
+    <div class="ts-line">
+      BRIEFED ${new Date().toUTCString()}<br>
+      CLAUDE AI + LIVE WEB SEARCH
+    </div>`;
+
+  document.getElementById('mainContent').innerHTML = html;
+}
+</script>
+</body>
+</html>
